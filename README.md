@@ -13,7 +13,7 @@ useful for your subnet calculations. I will try to develop the software
 continuously, so please don't hesitate to comment/inform for any bugs or
  new feature suggestions.   
  
-* MySQL Database Connection supporrt   
+* MySQL Database Connection support   
   .Store/update/manage IPv6 prefixes with MySQL database server   
   .Tested with MySQL-AB JDBC Connector Driver, Ver.5.1.23   
   .DriverName: mysql-connector-java-5.1.23-bin.jar   
