@@ -27,13 +27,13 @@ continuously, so please don't hesitate to comment/inform for any bugs or
 You can download from:   
 https://github.com/ygvn/IPv6-Subnet-Calculator-Tool-JavaFX/blob/master/IPv6SubnetCalculator_v3.0_JavaFX_JAR_EXE.zip   
 
-![JavaScreen.png]   
-![jfxS2.png]   
-![jfxS3.png]   
-![jfxS4.png]   
-![jfxS5.png]   
-![jfxScreenAll.png]   
-   
+[[https://github.com/ygvn/IPv6-Subnet-Calculator-Tool-JavaFX/blob/master/JavaScreen.png|alt=JavaScreen.png]]   
+[[https://github.com/ygvn/IPv6-Subnet-Calculator-Tool-JavaFX/blob/master/jfxS2.png|alt=jfxS2.png]]   
+[[https://github.com/ygvn/IPv6-Subnet-Calculator-Tool-JavaFX/blob/master/jfxS3.png|alt=jfxS3.png]]   
+[[https://github.com/ygvn/IPv6-Subnet-Calculator-Tool-JavaFX/blob/master/jfxS4.png|alt=jfxS4.png]]   
+[[https://github.com/ygvn/IPv6-Subnet-Calculator-Tool-JavaFX/blob/master/jfxS5.png|alt=jfxS5.png]]   
+[[https://github.com/ygvn/IPv6-Subnet-Calculator-Tool-JavaFX/blob/master/jfxScreenAll.png|alt=jfxScreenAll.png]]   
+
    
 Copyright (c) 2010-2018, Yücel Güven   
 All rights reserved.
