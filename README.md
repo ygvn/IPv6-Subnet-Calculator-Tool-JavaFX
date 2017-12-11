@@ -14,15 +14,15 @@ continuously, so please don't hesitate to comment/inform for any bugs or
  new feature suggestions.   
  
 * MySQL Database Connection supporrt   
-  .Store/update/manage IPv6 prefixes with MySQL database server     
-  .Tested with MySQL-AB JDBC Connector Driver, Ver.5.1.23     
-  .DriverName: mysql-connector-java-5.1.23-bin.jar   
-* Statistical View of Assigned/Available Prefixes     
+  .Store/update/manage IPv6 prefixes with MySQL database server   
+  .Tested with MySQL-AB JDBC Connector Driver, Ver.5.1.23   
+  .DriverName: mysql-connector-java-5.1.23-bin.jar   
+* Statistical View of Assigned/Available Prefixes   
   .Note: Assigned prefixes must exist in the database    
-* 4-Bytes AS Number plain/dot Conversion Tool     
-  .Convert Autonomous System Numbers from asplain to asdot and vice versa.   
-* List Reverse DNS zones    
-* Compress / Uncompress IPv6 Address Tool    
+* 4-Bytes AS Number plain/dot Conversion Tool    
+  .Convert Autonomous System Numbers from asplain to asdot and vice versa.   
+* List Reverse DNS zones   
+* Compress / Uncompress IPv6 Address Tool
 
 You can download from:   
 https://github.com/ygvn/IPv6-Subnet-Calculator-Tool-JavaFX/blob/master/IPv6SubnetCalculator_v3.0_JavaFX_JAR_EXE.zip   
