@@ -42,6 +42,7 @@ import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert.AlertType;
 import javafx.scene.control.Button;
+import javafx.scene.control.CheckBox;
 import javafx.scene.control.Label;
 import javafx.scene.control.ProgressBar;
 import javafx.scene.control.TextField;
@@ -81,7 +82,7 @@ public class SaveAsTxt {
     GridPane grid = new GridPane();
     final ProgressBar bar = new ProgressBar(0);
     FirstLineService service = new FirstLineService();
-    Label labelPercent = new Label("0%");
+    Label labelPercent = new Label(""); // CLOSED ! "0%"
     Button buttonSave = new Button("Save...");
     Button buttonCancel = new Button("Cancel");
     Button buttonExit = new Button("Exit");
@@ -99,6 +100,11 @@ public class SaveAsTxt {
     Label lbtoIndex = new Label("To index:");
     TextField texttoIndexNo = new TextField("0");
     Label lbStatus = new Label("Status:");
+    Label savingNo = new Label("Saving#:");
+    Label currIndex = new Label("");
+    CheckBox ckendaddr = new CheckBox();
+    final Label lbckendaddr = new Label("Save with Prefix End Addresses?");
+    Label lbsv = new Label("");
 
     public BigInteger maxsubnet = BigInteger.ZERO;
     SEaddress StartEnd = new SEaddress();
@@ -143,6 +149,28 @@ public class SaveAsTxt {
         //
         SetNewValues(input, is128Checked);
         //
+        if ((!is128Checked && input.subnetslash == 64)
+                ||
+                (is128Checked && input.subnetslash == 128)
+                ||
+                input.ID == 1
+                ||
+                input.ID == 2
+                )
+        {
+            ckendaddr.setSelected(false);
+            ckendaddr.setDisable(true);
+        }
+        else {
+            ckendaddr.setDisable(false);
+        }
+        
+        if (input.ID == 0 || input.ID == 1) {
+            this.lbsv.setText("[Prefixes]");
+        } else if (input.ID == 2) {
+            this.lbsv.setText("[Reverse DNS]");
+        }
+
     }
 
     public void SetNewValues(SEaddress input, Boolean is128Checked) {
@@ -161,6 +189,16 @@ public class SaveAsTxt {
         //
         ss = v6ST.Kolonlar(this.StartEnd.Start);
         se = v6ST.Kolonlar(this.StartEnd.End);
+        //
+        bar.progressProperty().unbind();
+        //labelPercent.textProperty().unbind();
+        //labelPercent.setText("0%");
+        labelStatus.textProperty().unbind();
+        labelStatus.setText("");
+        buttonSave.disableProperty().unbind();
+        service.reset();
+        bar.setProgress(0);
+        //
 
         if (!this.is128Checked) {
             this.r1.setText("s> " + ss.substring(0, 19) + "::" + "/" + this.StartEnd.subnetslash);
@@ -183,9 +221,28 @@ public class SaveAsTxt {
         }
         this.maxsubnet = this.maxsubnet.subtract(BigInteger.ONE);
         this.textmaxIndexNo.setText(String.valueOf(this.maxsubnet));
+        //
+        if ((!is128Checked && input.subnetslash == 64)
+                ||
+                (is128Checked && input.subnetslash == 128)
+                ||
+                input.ID == 1
+                ||
+                input.ID == 2
+                )
+        {
+            ckendaddr.setSelected(false);
+            ckendaddr.setDisable(true);
+        }
+        else {
+            ckendaddr.setDisable(false);
+        }        
     }
     
     public void SettingsAndEvents() {
+        ckendaddr.setIndeterminate(false);
+        lbckendaddr.setGraphic(ckendaddr);
+        
         textfromIndexNo.textProperty().addListener(new ChangeListener<String>() {
             @Override
             public void changed(ObservableValue<? extends String> observable, String oldValue,
@@ -208,13 +265,18 @@ public class SaveAsTxt {
             @Override
             public void handle(ActionEvent event) {
                 bar.progressProperty().unbind();
-                labelPercent.textProperty().unbind();
+                //labelPercent.textProperty().unbind(); CLOSED!
                 labelStatus.textProperty().unbind();
                 buttonSave.disableProperty().unbind();
                 //
+                //labelPercent.setText("0%"); CLOSED!
+                labelStatus.setText("");
+                service.reset();
+                //
                 bar.setProgress(0);
                 bar.progressProperty().bind(service.progressProperty());
-                labelPercent.textProperty().bind(service.messageProperty());
+                //labelPercent.textProperty().bind(service.messageProperty()); CLOSED!
+                currIndex.textProperty().bind(service.messageProperty());
                 labelStatus.textProperty().bind(service.stateProperty().asString());
                 buttonSave.disableProperty().bind(service.runningProperty());
                 //
@@ -294,7 +356,7 @@ public class SaveAsTxt {
             @Override
             public void handle(ActionEvent event) {
                 bar.progressProperty().unbind();
-                labelPercent.textProperty().unbind();
+                //labelPercent.textProperty().unbind(); CLOSED!
                 labelStatus.textProperty().unbind();
                 buttonSave.disableProperty().unbind();
                 //
@@ -322,7 +384,7 @@ public class SaveAsTxt {
                         count = 0;
                         TotalBytes = BigInteger.ZERO;
                         StartEnd.subnetidx = BigInteger.valueOf(FromIndex);
-                        String ss = "";
+                        String ss = "", se = "";
 
                         if (incomingID == 1) {
                             if (!is128Checked) {
@@ -333,10 +395,10 @@ public class SaveAsTxt {
                         }
                         StartEnd = v6ST.GoToSubnet(StartEnd, is128Checked);
                         for (i = 1; i <= howmany; i++) {
-                            count++;
                             if (isCancelled()) {
                                 count--;
-                                updateMessage(String.valueOf(i * 100 / howmany) + "%");
+                                //updateMessage(String.valueOf(i * 100 / howmany) + "%");
+                                updateMessage(String.valueOf(count));
                                 updateProgress(i, howmany);
                                 break;
                             } else {
@@ -349,9 +411,22 @@ public class SaveAsTxt {
                                         ss = v6ST.CompressAddress(ss);
                                         ss = "p" + StartEnd.subnetidx + "> " + ss + "/"
                                                 + StartEnd.subnetslash;
-                                        TotalBytes = TotalBytes.add(BigInteger.valueOf(ss.length() + 2));
-
                                         fileWriter.write(ss + "\r\n");
+                                        TotalBytes = TotalBytes.add(BigInteger.valueOf(ss.length() + 2));
+                                        //
+                                        if (StartEnd.subnetslash != 64) {
+                                            if (ckendaddr.isSelected()) {
+                                                se = v6ST.Kolonlar(StartEnd.End);
+                                                se = se.substring(0, 19);
+                                                se += "::";
+                                                se = v6ST.CompressAddress(se);
+                                                se = "e" + StartEnd.subnetidx + "> " + se + "/"
+                                                        + StartEnd.subnetslash;
+                                                fileWriter.write(se + "\r\n");
+                                                fileWriter.write("\r\n");
+                                                TotalBytes = TotalBytes.add(BigInteger.valueOf(se.length() + 4));
+                                            }
+                                        }
 
                                     } else if (incomingID == 2) {
                                         String[] sa;
@@ -378,9 +453,20 @@ public class SaveAsTxt {
                                         ss = v6ST.CompressAddress(ss);
                                         ss = "p" + StartEnd.subnetidx + "> " + ss + "/"
                                                 + StartEnd.subnetslash;
-                                        TotalBytes = TotalBytes.
-                                                add(BigInteger.valueOf(ss.length() + 2));
+                                        TotalBytes = TotalBytes.add(BigInteger.valueOf(ss.length() + 2));
                                         fileWriter.write(ss + "\r\n");
+                                        //
+                                        if (StartEnd.subnetslash != 128) {
+                                            if (ckendaddr.isSelected()) {
+                                                se = v6ST.Kolonlar(StartEnd.End);
+                                                se = v6ST.CompressAddress(se);
+                                                se = "e" + StartEnd.subnetidx + "> " + se + "/"
+                                                        + StartEnd.subnetslash;
+                                                fileWriter.write(se + "\r\n");
+                                                fileWriter.write("\r\n");
+                                                TotalBytes = TotalBytes.add(BigInteger.valueOf(se.length() + 4));
+                                            }
+                                        }
 
                                     } else if (incomingID == 2) {
                                         String[] sa;
@@ -406,7 +492,8 @@ public class SaveAsTxt {
                                 perc = (int) (i * 100 / howmany);
                                 saveState.SavedLines = BigInteger.valueOf(count);
                                 saveState.percentage = perc;
-                                updateMessage(String.valueOf(i * 100 / howmany) + "%");
+                                //updateMessage(String.valueOf(i * 100 / howmany) + "%");
+                                updateMessage(String.valueOf(count));
                                 updateProgress(i, howmany);
 
                                 if (StartEnd.Start.equals(StartEnd.UpperLimitAddress)
@@ -420,6 +507,7 @@ public class SaveAsTxt {
                                 }
 
                             }
+                            count++;
                         }
                         saveState.SavedLines = BigInteger.valueOf(count);
                         saveState.percentage = perc;
@@ -440,6 +528,12 @@ public class SaveAsTxt {
         grid.setAlignment(Pos.BASELINE_CENTER);
         grid.setPadding(new Insets(0, 5, 0, 5));
         //
+        lbsv.setFont(Font.font(java.awt.Font.MONOSPACED, FontWeight.NORMAL, 12));        
+        HBox hblbsv = new HBox();
+        hblbsv.setAlignment(Pos.CENTER_LEFT);
+        hblbsv.getChildren().add(lbsv);
+        grid.add(hblbsv, 1, 0);
+        //
         r0.setFont(Font.font(java.awt.Font.MONOSPACED, FontWeight.BOLD, 12));
         HBox hbr0 = new HBox();
         hbr0.setAlignment(Pos.CENTER_RIGHT);
@@ -447,9 +541,9 @@ public class SaveAsTxt {
 
         r1.setFont(Font.font(java.awt.Font.MONOSPACED, FontWeight.BOLD, 12));
         r2.setFont(Font.font(java.awt.Font.MONOSPACED, FontWeight.BOLD, 12));
-        grid.add(hbr0, 0, 0);
-        grid.add(r1, 1, 0);
-        grid.add(r2, 1, 1);
+        grid.add(hbr0, 0, 1);
+        grid.add(r1, 1, 1);
+        grid.add(r2, 1, 2);
         //
         Label empty = new Label("");
         grid.add(empty, 0, 2);
@@ -485,15 +579,22 @@ public class SaveAsTxt {
         grid.add(hblbstatus, 0, 7);
         grid.add(labelStatus, 1, 7);
         //
-        Label emp2 = new Label("");
-        grid.add(emp2, 0, 8);
+        HBox hbindexno = new HBox();
+        hbindexno.setAlignment(Pos.CENTER_RIGHT);        
+        hbindexno.getChildren().add(savingNo);
+        grid.add(hbindexno, 0, 8);
+        grid.add(currIndex, 1, 8);
+        //
+        HBox hblbendaddr = new HBox();
+        hblbendaddr.getChildren().add(lbckendaddr);
+        grid.add(hblbendaddr, 1, 9);
         //
         HBox hbButtons = new HBox(10);
         buttonSave.setPrefWidth(60);
         buttonCancel.setPrefWidth(60);
         buttonExit.setPrefWidth(60);
         hbButtons.getChildren().addAll(buttonSave, buttonCancel, buttonExit);
-        grid.add(hbButtons, 1, 9);
+        grid.add(hbButtons, 1, 10);
         //
         return grid;
     }

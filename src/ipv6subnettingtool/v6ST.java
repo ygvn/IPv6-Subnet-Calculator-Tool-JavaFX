@@ -463,7 +463,7 @@ public final class v6ST {
         return buf.toString();
     }
 
-    public static SEaddress ListFirstPage(SEaddress input, Boolean is128Checked) {
+    public static SEaddress ListFirstPage(SEaddress input, Boolean is128Checked, Boolean isEndChecked) {
 
         SEaddress subnets = new SEaddress();
         subnets.Start = input.Start;
@@ -509,9 +509,16 @@ public final class v6ST {
                 if (input.subnetslash == 64) {
                     subnets.liste.add(ss);
                 } else {
-                    se = Kolonlar(subnets.End);
-                    se = "e" + subnets.subnetidx + "> " + se + "/" + input.subnetslash;
                     subnets.liste.add(ss);
+                    
+                    if (isEndChecked) {
+                        se = Kolonlar(subnets.End);
+                        se = se.substring(0, 19) + "::";
+                        se = CompressAddress(se);
+                        se = "e" + subnets.subnetidx + "> " + se + "/" + input.subnetslash;
+                        subnets.liste.add(se);
+                        subnets.liste.add("");
+                    }
                 }
             } else if (is128Checked) {
                 ss = Kolonlar(subnets.Start);
@@ -521,10 +528,15 @@ public final class v6ST {
                 if (input.subnetslash == 128) {
                     subnets.liste.add(ss);
                 } else {
-                    se = Kolonlar(subnets.End);
-                    se = "e" + subnets.subnetidx + "> " + se + "/" + input.subnetslash;
-
                     subnets.liste.add(ss);
+                    
+                    if (isEndChecked) {
+                        se = Kolonlar(subnets.End);
+                        se = CompressAddress(se);
+                        se = "e" + subnets.subnetidx + "> " + se + "/" + input.subnetslash;
+                        subnets.liste.add(se);
+                        subnets.liste.add("");
+                    }
                 }
             }
 
@@ -538,7 +550,7 @@ public final class v6ST {
         return subnets;
     }
 
-    public static SEaddress ListPageBackward(SEaddress input, Boolean is128Checked) {
+    public static SEaddress ListPageBackward(SEaddress input, Boolean is128Checked, Boolean isEndChecked) {
         SEaddress subnets = new SEaddress();
         subnets = input;
 
@@ -559,9 +571,15 @@ public final class v6ST {
                 if (input.subnetslash == 64) {
                     subnets.liste.add(ss);
                 } else {
-                    se = Kolonlar(subnets.End);
-                    se = "e" + subnets.subnetidx + "> " + se + "/"
-                            + input.subnetslash;
+                    if (isEndChecked) {
+                        se = Kolonlar(subnets.End);
+                        se = se.substring(0, 19) + "::";
+                        se = CompressAddress(se);
+                        se = "e" + subnets.subnetidx + "> " + se + "/"
+                                + input.subnetslash;
+                        subnets.liste.add("");
+                        subnets.liste.add(se);
+                    }
                     subnets.liste.add(ss);
                 }
 
@@ -574,10 +592,14 @@ public final class v6ST {
                 if (input.subnetslash == 128) {
                     subnets.liste.add(ss);
                 } else {
-                    se = Kolonlar(subnets.End);
-                    se = "e" + subnets.subnetidx + "> " + se + "/"
-                            + input.subnetslash;
-
+                    if (isEndChecked) {
+                        se = Kolonlar(subnets.End);
+                        se = CompressAddress(se);
+                        se = "e" + subnets.subnetidx + "> " + se + "/"
+                                + input.subnetslash;
+                        subnets.liste.add("");
+                        subnets.liste.add(se);
+                    }
                     subnets.liste.add(ss);
                 }
             }
@@ -591,7 +613,7 @@ public final class v6ST {
         return subnets;
     }
 
-    public static SEaddress ListPageForward(SEaddress input, Boolean is128Checked) {
+    public static SEaddress ListPageForward(SEaddress input, Boolean is128Checked, Boolean isEndChecked) {
         SEaddress subnets = new SEaddress();
         subnets = input;
 
@@ -611,10 +633,16 @@ public final class v6ST {
                 if (input.subnetslash == 64) {
                     subnets.liste.add(ss);
                 } else {
-                    se = Kolonlar(subnets.End);
-                    se = "e" + subnets.subnetidx + "> " + se + "/"
-                            + input.subnetslash;
                     subnets.liste.add(ss);
+                    if (isEndChecked) {
+                        se = Kolonlar(subnets.End);
+                        se = se.substring(0, 19) + "::";
+                        se = CompressAddress(se);
+                        se = "e" + subnets.subnetidx + "> " + se + "/"
+                                + input.subnetslash;
+                        subnets.liste.add(se);
+                        subnets.liste.add("");
+                    }
                 }
             } else if (is128Checked) {
                 ss = Kolonlar(subnets.Start);
@@ -625,11 +653,15 @@ public final class v6ST {
                 if (input.subnetslash == 128) {
                     subnets.liste.add(ss);
                 } else {
-                    se = Kolonlar(subnets.End);
-                    se = "e" + subnets.subnetidx + "> " + se + "/"
-                            + input.subnetslash;
-
                     subnets.liste.add(ss);
+                    if (isEndChecked) {
+                        se = Kolonlar(subnets.End);
+                        se = CompressAddress(se);
+                        se = "e" + subnets.subnetidx + "> " + se + "/"
+                                + input.subnetslash;
+                        subnets.liste.add(se);
+                        subnets.liste.add("");                        
+                    }
                 }
             }
 
@@ -643,7 +675,7 @@ public final class v6ST {
         return subnets;
     }
 
-    public static SEaddress ListLastPage(SEaddress input, Boolean is128Checked) {
+    public static SEaddress ListLastPage(SEaddress input, Boolean is128Checked, Boolean isEndChecked) {
 
         SEaddress subnets = new SEaddress();
         subnets = input;
@@ -667,10 +699,15 @@ public final class v6ST {
                 if (input.subnetslash == 64) {
                     subnets.liste.add(ss);
                 } else {
-                    se = Kolonlar(subnets.End);
-                    se = "e" + subnets.subnetidx + "> " + se + "/"
-                            + input.subnetslash;
-
+                    if (isEndChecked) {
+                        se = Kolonlar(subnets.End);
+                        se = se.substring(0, 19) + "::";
+                        se = CompressAddress(se);
+                        se = "e" + subnets.subnetidx + "> " + se + "/"
+                                + input.subnetslash;
+                        subnets.liste.add("");
+                        subnets.liste.add(se);                        
+                    }
                     subnets.liste.add(ss);
                 }
             } else if (is128Checked) {
@@ -682,10 +719,14 @@ public final class v6ST {
                 if (input.subnetslash == 128) {
                     subnets.liste.add(ss);
                 } else {
-                    se = Kolonlar(subnets.End);
-                    se = "e" + subnets.subnetidx + "> " + se + "/"
-                            + input.subnetslash;
-
+                    if (isEndChecked) {
+                        se = Kolonlar(subnets.End);
+                        se = CompressAddress(se);
+                        se = "e" + subnets.subnetidx + "> " + se + "/"
+                                + input.subnetslash;
+                        subnets.liste.add("");
+                        subnets.liste.add(se);                        
+                    }
                     subnets.liste.add(ss);
                 }
             }

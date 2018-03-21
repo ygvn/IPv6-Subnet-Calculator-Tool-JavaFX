@@ -43,7 +43,7 @@ import javafx.stage.Stage;
  * @author Yucel Guven
  */
 public final class About {
-    public static final String version = "3.0";
+    public static final String version = "3.2";
     /**
      * About 
      */

@@ -137,6 +137,7 @@ public class IPv6SubnettingTool extends Application {
     final Label lb128 = new Label("128bits");
     final Label lbprefix = new Label("Prefix:");
     final Label lbsub = new Label("Subnet");
+    final Label lbckendaddr = new Label("End?");
     final Label lbyg = new Label("A Free IPv6 Subnet Calculator by Yücel Güven         ");    
     final Slider sd1 = new Slider(1, 64, 1);
     final Slider sd2 = new Slider(1, 64, 1);
@@ -145,6 +146,7 @@ public class IPv6SubnettingTool extends Application {
     static TextField tfendAddr = new TextField("");
     CheckBox ck128 = new CheckBox();
     CheckBox cksub = new CheckBox();
+    CheckBox ckendaddr = new CheckBox();
     final Button buttonPrevSpace = new Button("<");
     final Button buttonNextSpace = new Button(">");
     final Label lbaddrsp = new Label("Global Routing Prefix#:");
@@ -183,6 +185,7 @@ public class IPv6SubnettingTool extends Application {
     MenuItem workwithSelected = new MenuItem("work with selected Prefix");
     MenuItem sendPrefixtoDB = new MenuItem("Send prefix to database...");
     static Menu menuStages = new Menu("Stages");
+    final MenuItem ListDNSrevs = new MenuItem("List All DNS Reverse Zones");
     //
     BigInteger currentidx = BigInteger.ZERO;
     BigInteger pix = BigInteger.ZERO;
@@ -436,7 +439,12 @@ public class IPv6SubnettingTool extends Application {
             //return;
         } else {
             listcount.setVisible(true);
-            listcount.setText("[" + String.valueOf(prefixlist.getItems().size()) + " ent.]");
+            if (ckendaddr.isSelected()) {
+                listcount.setText("[" + String.valueOf(prefixlist.getItems().size() / 3 ) + " ent.]");
+            } 
+            else {
+                listcount.setText("[" + String.valueOf(prefixlist.getItems().size()) + " ent.]");
+            }
         }
 
         gc.clearRect(clearX, clearY, clearW, clearH);
@@ -506,6 +514,7 @@ public class IPv6SubnettingTool extends Application {
         //
         ck128.setIndeterminate(false);
         cksub.setIndeterminate(false);
+        ckendaddr.setIndeterminate(false);
         //
         lb128.setFont(Font.font("Tahoma", FontWeight.THIN, 9));
         lb128.setGraphic(ck128);
@@ -514,6 +523,10 @@ public class IPv6SubnettingTool extends Application {
         lbsub.setFont(Font.font("Tahoma", FontWeight.THIN, 9));
         lbsub.setGraphic(cksub);
         lbsub.setContentDisplay(ContentDisplay.RIGHT);
+        //
+        lbckendaddr.setFont(Font.font("Tahoma", FontWeight.THIN, 9));
+        lbckendaddr.setGraphic(ckendaddr);
+        lbckendaddr.setContentDisplay(ContentDisplay.RIGHT);        
         //
         lbyg.setFont(Font.font("Tahoma", FontWeight.NORMAL, 7));
         lbyg.setDisable(true);
@@ -528,6 +541,7 @@ public class IPv6SubnettingTool extends Application {
         //
         ck128.setDisable(true);
         cksub.setDisable(true);
+        ckendaddr.setDisable(true);
         //
         c1.setText("/" + (int) sd1.getValue());
         c2.setText("/" + (int) sd2.getValue());
@@ -599,6 +613,7 @@ public class IPv6SubnettingTool extends Application {
                 buttonBack.setDisable(true);
                 buttonFwd.setDisable(true);
                 buttonLast.setDisable(true);
+                ckendaddr.setDisable(true);
                 listcount.setVisible(false);
                 prefixlist.getItems().clear();
 
@@ -618,6 +633,7 @@ public class IPv6SubnettingTool extends Application {
                 buttonBack.setDisable(true);
                 buttonFwd.setDisable(true);
                 buttonLast.setDisable(true);
+                ckendaddr.setDisable(true);
                 listcount.setVisible(false);
                 prefixlist.getItems().clear();
 
@@ -744,6 +760,41 @@ public class IPv6SubnettingTool extends Application {
             }
         });
         //
+        ckendaddr.selectedProperty().addListener(new ChangeListener<Boolean>() {
+            public void changed(ObservableValue<? extends Boolean> ov,
+                    Boolean old_val, Boolean new_val) {
+                
+                String first = prefixlist.getItems().get(0).split(" ")[1].split("/")[0];
+                SEaddress tmpse = new SEaddress();
+                tmpse.Start = v6ST.FormalizeAddr(first);
+                tmpse = v6ST.Subnetting(tmpse, ck128.isSelected());
+
+                prefixlist.getItems().clear();
+
+                if (!ck128.isSelected() && (int) sd2.getValue() == 64
+                    ||
+                    ck128.isSelected() && (int) sd2.getValue() == 128
+                    )
+                {
+                    ckendaddr.setSelected(false);
+                    ckendaddr.setDisable(true);
+                }
+                else
+                    ckendaddr.setDisable(false);
+
+                tmpse.slash = (int) sd1.getValue();
+                tmpse.subnetslash = (int) sd2.getValue();
+                tmpse.upto = upto;
+                tmpse.UpperLimitAddress = StartEnd.End;               
+
+                subnets = v6ST.ListFirstPage(tmpse, ck128.isSelected(), ckendaddr.isSelected());
+                page.End = subnets.End;
+
+                prefixlist.setItems(subnets.liste);
+                UpdateCount();
+            }
+        });        
+        //
         buttonReset.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent event) {
@@ -751,6 +802,8 @@ public class IPv6SubnettingTool extends Application {
                 ck128.setDisable(true);
                 cksub.setSelected(false);
                 cksub.setDisable(true);
+                ckendaddr.setSelected(false);
+                ckendaddr.setDisable(true);                
                 sd1.setValue(1);
                 sd1.setDisable(true);
                 sd2.setValue(1);
@@ -774,6 +827,17 @@ public class IPv6SubnettingTool extends Application {
         buttonFirstPage.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent event) {
+                if (!ck128.isSelected() && (int) sd2.getValue() == 64
+                    ||
+                    ck128.isSelected() && (int) sd2.getValue() == 128
+                    )
+                {
+                    ckendaddr.setSelected(false);
+                    ckendaddr.setDisable(true);
+                }
+                else
+                    ckendaddr.setDisable(false);
+
                 listcount.setVisible(true);
                 prefixlist.getItems().clear();
                 int delta = (int) sd2.getValue() - (int) sd1.getValue();
@@ -782,7 +846,7 @@ public class IPv6SubnettingTool extends Application {
                 StartEnd.subnetslash = (int) sd2.getValue();
                 StartEnd.upto = upto;
 
-                subnets = v6ST.ListFirstPage(StartEnd, cksub.isSelected());
+                subnets = v6ST.ListFirstPage(StartEnd, ck128.isSelected(), ckendaddr.isSelected());
                 page.End = subnets.End;
 
                 prefixlist.setItems(subnets.liste);
@@ -813,7 +877,7 @@ public class IPv6SubnettingTool extends Application {
                 subnets.UpperLimitAddress = StartEnd.UpperLimitAddress;
 
                 subnets.End = page.End = page.Start.subtract(BigInteger.ONE);
-                subnets = v6ST.ListPageBackward(subnets, cksub.isSelected());
+                subnets = v6ST.ListPageBackward(subnets, ck128.isSelected(), ckendaddr.isSelected());
                 page.Start = subnets.Start;
 
                 prefixlist.setItems(subnets.liste);
@@ -843,7 +907,7 @@ public class IPv6SubnettingTool extends Application {
                 subnets.UpperLimitAddress = StartEnd.UpperLimitAddress;
 
                 subnets.Start = page.Start = page.End.add(BigInteger.ONE);
-                subnets = v6ST.ListPageForward(subnets, cksub.isSelected());
+                subnets = v6ST.ListPageForward(subnets, ck128.isSelected(), ckendaddr.isSelected());
                 page.End = subnets.End;
 
                 prefixlist.setItems(subnets.liste);
@@ -873,7 +937,7 @@ public class IPv6SubnettingTool extends Application {
                 subnets.UpperLimitAddress = StartEnd.UpperLimitAddress;
 
                 subnets.End = page.End = StartEnd.UpperLimitAddress;
-                subnets = v6ST.ListLastPage(subnets, cksub.isSelected());
+                subnets = v6ST.ListLastPage(subnets, ck128.isSelected(), ckendaddr.isSelected());
                 page.Start = subnets.Start;
 
                 prefixlist.setItems(subnets.liste);
@@ -944,6 +1008,12 @@ public class IPv6SubnettingTool extends Application {
                 clipboard.setContent(content);
             }
         });
+        MenuItem contextitemListRevDNS = new MenuItem("List All DNS Reverse Zones");
+        contextitemListRevDNS.setOnAction(new EventHandler<ActionEvent>() {
+            public void handle(ActionEvent e) {
+                ListDNSrevs.fire();
+            }
+        });        
         MenuItem contextitemGotopfx = new MenuItem("Go to Prefix...");
         contextitemGotopfx.setOnAction(new EventHandler<ActionEvent>() {
             public void handle(ActionEvent e) {
@@ -988,9 +1058,9 @@ public class IPv6SubnettingTool extends Application {
             }
         });
         contextMenu.getItems().addAll(contextitemSelectall, contextitemCopy,
-                contextitemSaveas, new SeparatorMenuItem(), contextitemGotopfx,
-                contextitemFindpfx, contextitemworkWithSelected, new SeparatorMenuItem(),
-                contextitemSendtodb, contextitemsubPrefixes,
+                contextitemSaveas, new SeparatorMenuItem(), contextitemListRevDNS,
+                contextitemGotopfx, contextitemFindpfx, contextitemworkWithSelected,
+                new SeparatorMenuItem(), contextitemSendtodb, contextitemsubPrefixes,
                 contextitemstatsUsage);        
         contextMenu.setOnShowing(new EventHandler<WindowEvent>() {
             @Override
@@ -998,11 +1068,13 @@ public class IPv6SubnettingTool extends Application {
                 
                 if (prefixlist.getItems().isEmpty()) {
                     contextitemSaveas.setDisable(true);
+                    contextitemListRevDNS.setDisable(true);
                     contextitemGotopfx.setDisable(true);
                     contextitemFindpfx.setDisable(true);
                     contextitemworkWithSelected.setDisable(true);
                 } else {
                     contextitemSaveas.setDisable(false);
+                    contextitemListRevDNS.setDisable(false);
                     contextitemGotopfx.setDisable(false);
                     contextitemFindpfx.setDisable(false);
                     contextitemworkWithSelected.setDisable(false);
@@ -1178,7 +1250,6 @@ public class IPv6SubnettingTool extends Application {
         Menu menuTools = new Menu("Tools");
         final MenuItem List64 = new MenuItem("List /64 Prefixes");
         final MenuItem List128 = new MenuItem("List /128 Addresses");
-        final MenuItem ListDNSrevs = new MenuItem("List All DNS reverse zones");
         MenuItem whoisQuery = new MenuItem("whois Query");
         MenuItem compress = new MenuItem("Compress/Uncompress address...");
         MenuItem asnplaindot = new MenuItem("AS Number plain/dot Conversion");
@@ -1470,6 +1541,16 @@ public class IPv6SubnettingTool extends Application {
                         ss = "p" + subnets.subnetidx + "> " + ss + "/"
                                 + String.valueOf((int) sd2.getValue());
                         prefixlist.getItems().add(ss);
+                        //
+                        if (ckendaddr.isSelected()) {
+                            se = v6ST.Kolonlar(subnets.End);
+                            se = v6ST.CompressAddress(se);
+                            se = "e" + subnets.subnetidx + "> " + se + "/"
+                                    + String.valueOf((int) sd2.getValue());
+                            prefixlist.getItems().add(se);
+                            prefixlist.getItems().add("");
+                        }
+                        
                     } else if (!ck128.isSelected()) {
                         ss = v6ST.Kolonlar(subnets.Start);
                         ss = ss.substring(0, 19);
@@ -1479,6 +1560,17 @@ public class IPv6SubnettingTool extends Application {
                                 + String.valueOf((int) sd2.getValue());
 
                         prefixlist.getItems().add(ss);
+                        //
+                        if (ckendaddr.isSelected()) {
+                            se = v6ST.Kolonlar(subnets.End);
+                            se = se.substring(0, 19);
+                            se = se + "::";
+                            se = v6ST.CompressAddress(se);
+                            se = "e" + subnets.subnetidx + "> " + se + "/"
+                                    + String.valueOf((int) sd2.getValue());
+                            prefixlist.getItems().add(se);
+                            prefixlist.getItems().add("");
+                        }
                     }
 
                     if (subnets.End.equals(StartEnd.End)) {
@@ -1521,7 +1613,7 @@ public class IPv6SubnettingTool extends Application {
                 SEaddress seaddr = new SEaddress();
                 seaddr.slash = (int) sd1.getValue();
                 seaddr.subnetslash = (int) sd2.getValue();
-                String ss = ""; //, se = "";
+                String ss = "", se = "";
                 int count = 0;
 
                 BigInteger Resv6 = v6ST.FormalizeAddr(findpfx);
@@ -1561,6 +1653,16 @@ public class IPv6SubnettingTool extends Application {
                                         + String.valueOf((int) sd2.getValue());
 
                                 prefixlist.getItems().add(ss);
+                                //
+                                if (ckendaddr.isSelected()) {
+                                    se = v6ST.Kolonlar(subnets.End);
+                                    se = v6ST.CompressAddress(se);
+                                    se = "e" + subnets.subnetidx + "> " + se + "/"
+                                            + String.valueOf((int) sd2.getValue());
+                                    prefixlist.getItems().add(se);
+                                    prefixlist.getItems().add("");
+                                }                                
+                                
                             } else if (!ck128.isSelected()) {
                                 ss = v6ST.Kolonlar(subnets.Start);
                                 ss = ss.substring(0, 19);
@@ -1569,6 +1671,17 @@ public class IPv6SubnettingTool extends Application {
                                 ss = "p" + subnets.subnetidx + "> " + ss + "/"
                                         + String.valueOf((int) sd2.getValue());
                                 prefixlist.getItems().add(ss);
+                                //
+                                if (ckendaddr.isSelected()) {
+                                    se = v6ST.Kolonlar(subnets.End);
+                                    se = se.substring(0, 19);
+                                    se = se + "::";
+                                    se = v6ST.CompressAddress(se);
+                                    se = "e" + subnets.subnetidx + "> " + se + "/"
+                                            + String.valueOf((int) sd2.getValue());
+                                    prefixlist.getItems().add(se);
+                                    prefixlist.getItems().add("");
+                                }
                             }
 
                             if (subnets.End.equals(StartEnd.End)) {
@@ -2130,6 +2243,11 @@ public class IPv6SubnettingTool extends Application {
         HBox sldr2 = new HBox(3);
         sldr2.getChildren().addAll(sd2, c2);
         grid.add(sldr2, 1, 7);
+        //
+        HBox hblbendaddr = new HBox();
+        hblbendaddr.getChildren().add(lbckendaddr);
+        hblbendaddr.setAlignment(Pos.BOTTOM_RIGHT); //.CENTER_RIGHT);
+        grid.add(hblbendaddr, 0, 8);
         //
         hblistcount.getChildren().add(listcount);
         hblistcount.setAlignment(Pos.BOTTOM_RIGHT);
