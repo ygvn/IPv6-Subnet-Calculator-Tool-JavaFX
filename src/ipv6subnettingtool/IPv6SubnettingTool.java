@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2018, Yucel Guven
+ * Copyright (c) 2010-2019, Yucel Guven
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -2010,6 +2010,7 @@ public class IPv6SubnettingTool extends Application {
                         + "`" + dbserverInfo.DBname + "`;");
                 // Create table if not exists:
                 this.statement.executeUpdate("CREATE TABLE IF NOT EXISTS "
+                        + "`" + dbserverInfo.DBname + "`."
                         + "`" + dbserverInfo.Tablename + "`"
                         + " ( "
                         + "prefix VARBINARY(16), "
@@ -2034,6 +2035,7 @@ public class IPv6SubnettingTool extends Application {
                 if (!this.resultSet.next()) {
                     this.statement.executeUpdate(
                             "CREATE TRIGGER trig_insert BEFORE INSERT ON "
+                            + "`" + dbserverInfo.DBname + "`."
                             + "`" + dbserverInfo.Tablename + "`"
                             + " FOR EACH ROW BEGIN SET NEW.`created`=IF(ISNULL(NEW.`created`) OR "
                             + "NEW.`created`='0000-00-00 00:00:00', CURRENT_TIMESTAMP, "
@@ -2048,6 +2050,7 @@ public class IPv6SubnettingTool extends Application {
                 if (!this.resultSet.next()) {
                     this.statement.executeUpdate(
                             "CREATE trigger trig_update BEFORE UPDATE ON "
+                            + "`" + dbserverInfo.DBname + "`."
                             + "`" + dbserverInfo.Tablename + "`"
                             + " FOR EACH ROW "
                             + "SET NEW.`last-updated` = IF(NEW.`last-updated` < OLD.`last-updated`, "
@@ -2061,7 +2064,8 @@ public class IPv6SubnettingTool extends Application {
                 if (!this.resultSet.next()) {
                     this.statement.executeUpdate(
                             " CREATE INDEX idx_index ON "
-                            + dbserverInfo.Tablename
+                            + "`" + dbserverInfo.DBname + "`."
+                            + "`" + dbserverInfo.Tablename + "`"
                             + " (prefix, pflen) USING BTREE;"
                     );
                 }
@@ -2072,6 +2076,7 @@ public class IPv6SubnettingTool extends Application {
                 // create table if not exists:
                 this.statement.executeUpdate(
                         "CREATE TABLE IF NOT EXISTS "
+                        + "`" + dbserverInfo.DBname + "`."
                         + "`" + dbserverInfo.Tablename + "`"
                         + " ( "
                         + "prefix VARBINARY(16), "
@@ -2098,6 +2103,7 @@ public class IPv6SubnettingTool extends Application {
                 if (!this.resultSet.next()) {
                     this.statement.executeUpdate(
                             "CREATE TRIGGER trig_insert BEFORE INSERT ON "
+                            + "`" + dbserverInfo.DBname + "`."
                             + "`" + dbserverInfo.Tablename + "`"
                             + " FOR EACH ROW BEGIN SET NEW.`created`=IF(ISNULL(NEW.`created`) OR "
                             + "NEW.`created`='0000-00-00 00:00:00', CURRENT_TIMESTAMP, "
@@ -2112,6 +2118,7 @@ public class IPv6SubnettingTool extends Application {
                 if (!this.resultSet.next()) {
                     this.statement.executeUpdate(
                             "CREATE trigger trig_update BEFORE UPDATE ON "
+                            + "`" + dbserverInfo.DBname + "`."
                             + "`" + dbserverInfo.Tablename + "`"
                             + " FOR EACH ROW "
                             + "SET NEW.`last-updated` = IF(NEW.`last-updated` < OLD.`last-updated`, "
@@ -2120,12 +2127,15 @@ public class IPv6SubnettingTool extends Application {
                 }
                 // and index it if not indexed:
                 this.resultSet = this.statement.executeQuery(
-                        "SHOW INDEX from " + dbserverInfo.DBname
+                        "SHOW INDEX from " 
+                        + "`" + dbserverInfo.DBname + "`."
+                        + "`" + dbserverInfo.Tablename + "`"
                         + " WHERE Key_name = 'idx_index';");
                 if (!this.resultSet.next()) {
                     this.statement.executeUpdate(
                             " CREATE INDEX idx_index ON "
-                            + dbserverInfo.Tablename
+                            + "`" + dbserverInfo.DBname + "`."
+                            + "`" + dbserverInfo.Tablename + "`"
                             + " (prefix, pflen) USING BTREE;"
                     );
                 }
@@ -2144,7 +2154,9 @@ public class IPv6SubnettingTool extends Application {
             return -1;
         }
         String MySQLcmd = "SELECT inet6_ntoa(prefix), pflen, parentpflen "
-                + " from " + dbserverInfo.Tablename
+                + " from " 
+                + "`" + dbserverInfo.DBname + "`."
+                + "`" + dbserverInfo.Tablename + "`"
                 + " WHERE ( prefix=inet6_aton('" + inprefix + "') "
                 + " AND pflen=" + pflen + " );";
         try {
