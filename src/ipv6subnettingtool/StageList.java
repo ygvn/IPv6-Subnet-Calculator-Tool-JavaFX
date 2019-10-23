@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019, Yucel Guven
+ * Copyright (c) 2010-2020, Yucel Guven
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without

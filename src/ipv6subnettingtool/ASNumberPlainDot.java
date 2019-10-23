@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019, Yucel Guven
+ * Copyright (c) 2010-2020, Yucel Guven
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -53,6 +53,7 @@ import javafx.stage.WindowEvent;
  * @author Yucel Guven
  */
 public class ASNumberPlainDot {
+//<editor-fold defaultstate="collapsed" desc="special initials/constants -yucel">    
     Stage stage = new Stage();
     GridPane asnGrid = new GridPane();
     Scene asnScene = new Scene(asnGrid, 280, 200);
@@ -64,6 +65,8 @@ public class ASNumberPlainDot {
     final ToggleGroup group = new ToggleGroup();
     RadioButton rb1 = new RadioButton("from asplain to asdot");
     RadioButton rb2 = new RadioButton("from asdot to asplain");
+    //
+    //</editor-fold>
 
     public ASNumberPlainDot() {
         //
@@ -159,6 +162,7 @@ public class ASNumberPlainDot {
             }
         });
         tfinput.textProperty().addListener(new ChangeListener<String>() {
+            @Override
             public void changed(ObservableValue<? extends String> observable, String oldValue,
                     String newValue) {
                 if (!newValue.matches("[0-9][.]")) { // only digits and dots
@@ -175,7 +179,6 @@ public class ASNumberPlainDot {
                 }
             }
         });
-
     }
 
     public void StageShow() {
@@ -186,5 +189,4 @@ public class ASNumberPlainDot {
         }
         stage.centerOnScreen();
     }
-    
 }

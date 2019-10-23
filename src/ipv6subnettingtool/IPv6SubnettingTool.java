@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019, Yucel Guven
+ * Copyright (c) 2010-2020, Yucel Guven
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -25,7 +25,11 @@
  */
 package ipv6subnettingtool;
 
+import java.io.File;
+import java.io.IOException;
 import java.math.BigInteger;
+import java.net.InetAddress;
+import java.net.UnknownHostException;
 import java.sql.Connection;
 import java.sql.DatabaseMetaData;
 import java.sql.DriverManager;
@@ -84,6 +88,22 @@ import javafx.scene.text.TextAlignment;
 import javafx.scene.text.TextFlow;
 import javafx.stage.Stage;
 import javafx.stage.WindowEvent;
+import javax.xml.XMLConstants;
+import javax.xml.parsers.DocumentBuilder;
+import javax.xml.parsers.DocumentBuilderFactory;
+import javax.xml.parsers.ParserConfigurationException;
+import javax.xml.transform.OutputKeys;
+import javax.xml.transform.Transformer;
+import javax.xml.transform.TransformerConfigurationException;
+import javax.xml.transform.TransformerException;
+import javax.xml.transform.TransformerFactory;
+import javax.xml.transform.dom.DOMSource;
+import javax.xml.transform.stream.StreamResult;
+import org.w3c.dom.Document;
+import org.w3c.dom.Element;
+import org.w3c.dom.Node;
+import org.w3c.dom.NodeList;
+import org.xml.sax.SAXException;
 
 /**
  *
@@ -129,7 +149,7 @@ public class IPv6SubnettingTool extends Application {
     Text status = new Text(">");
     final Label addr = new Label("Address:");
     TextField input = new TextField("2001:db8:abcd:1234::");
-    final Button buttonFind = new Button("Find");
+    final Button buttonCalc = new Button("Calculate");
     final Label labelipv6 = new Label("IPv6:");
     TextField ipv6addr = new TextField("");
     final Button buttonReset = new Button("Reset");
@@ -147,6 +167,8 @@ public class IPv6SubnettingTool extends Application {
     CheckBox ck128 = new CheckBox();
     CheckBox cksub = new CheckBox();
     CheckBox ckendaddr = new CheckBox();
+    final Label lbsmask = new Label("Mask:");
+    TextField smask = new TextField("");
     final Button buttonPrevSpace = new Button("<");
     final Button buttonNextSpace = new Button(">");
     final Label lbaddrsp = new Label("Global Routing Prefix#:");
@@ -184,6 +206,7 @@ public class IPv6SubnettingTool extends Application {
     MenuItem Findpfx = new MenuItem("Find prefix");
     MenuItem workwithSelected = new MenuItem("work with selected Prefix");
     MenuItem sendPrefixtoDB = new MenuItem("Send prefix to database...");
+    MenuItem getPrefixInfoFromDB = new MenuItem("Get prefix info from database...");    
     static Menu menuStages = new Menu("Stages");
     final MenuItem ListDNSrevs = new MenuItem("List All DNS Reverse Zones");
     //
@@ -197,6 +220,8 @@ public class IPv6SubnettingTool extends Application {
     public static DBServerInfo dbserverInfo = new DBServerInfo();
     private static Statement statement = null;
     private static ResultSet resultSet = null;
+    //
+    public static final String xmlFilename = "IPv6SubnettingToolInfo.xml";
     //
     //</editor-fold>
 
@@ -214,7 +239,8 @@ public class IPv6SubnettingTool extends Application {
                     if (ex.toString().contains("MySQLSyntaxErrorException")) {
                         /* Do Nothing. Just testing the connection. Intentional Syntax Error. */
                     } else {
-                        MsgBox.Show(Alert.AlertType.ERROR, ex.toString());
+                        /* Do Nothing. Just testing the connection. Intentional Syntax Error. */
+                        //MsgBox.Show(Alert.AlertType.ERROR, ex.toString());
                     }
                 }
                 Boolean isClosed = false; // Assuming conn. is open
@@ -225,12 +251,12 @@ public class IPv6SubnettingTool extends Application {
                 }
 
                 if (!isClosed) {
-                    lbdbstatus.setText("db=UP");
-                    StatsUsage.lbdbstatus.setText("db=UP ");
-                    ListAssignedfromDB.lbdbstatus.setText("db=UP ");
-                    DatabaseUI.lbdbstatus.setText("db=UP ");
-                    PrefixSubLevels.lbdbstatus.setText("db=UP ");
-                    ListSubnetRange.lbdbstatus.setText("db=UP ");
+                    lbdbstatus.setText("db=Up");
+                    StatsUsage.lbdbstatus.setText("db=Up ");
+                    ListAssignedfromDB.lbdbstatus.setText("db=Up ");
+                    DatabaseUI.lbdbstatus.setText("db=Up ");
+                    PrefixSubLevels.lbdbstatus.setText("db=Up ");
+                    ListSubnetRange.lbdbstatus.setText("db=Up ");
                     //
                     StatsUsage.MySQLconnection = MySQLconnection;
                     ListAssignedfromDB.MySQLconnection = MySQLconnection;
@@ -470,11 +496,13 @@ public class IPv6SubnettingTool extends Application {
 
     public void SettingsAndEvents() {
         
+        ReadInfoXML();
         HeaderStageItems();
         menuStages.setText("Stages " + "(" + stageList.size() +")");
+        //
         input.setPrefWidth(300);
         input.setFont(Font.font(java.awt.Font.MONOSPACED, 12));
-        buttonFind.setPrefWidth(75);
+        buttonCalc.setPrefWidth(75);
         //
         ipv6addr.setPrefWidth(300);
         ipv6addr.setFont(Font.font(java.awt.Font.MONOSPACED, 12));
@@ -512,6 +540,10 @@ public class IPv6SubnettingTool extends Application {
         lb2.setFont(Font.font("Tahoma", FontWeight.THIN, 9.5));
         lb3.setFont(Font.font("Tahoma", FontWeight.THIN, 9.5));
         //
+        smask.setPrefWidth(300);
+        smask.setFont(Font.font(java.awt.Font.MONOSPACED, 12));
+        smask.setEditable(false);
+        //
         ck128.setIndeterminate(false);
         cksub.setIndeterminate(false);
         ckendaddr.setIndeterminate(false);
@@ -547,7 +579,7 @@ public class IPv6SubnettingTool extends Application {
         c2.setText("/" + (int) sd2.getValue());
         //
         prefixlist.setMaxWidth(380);
-        prefixlist.setMaxHeight(190);
+        prefixlist.setMaxHeight(170);
         prefixlist.setContextMenu(contextMenu);
         prefixlist.getSelectionModel().setSelectionMode(SelectionMode.MULTIPLE);
         listcount.setStyle("-fx-text-fill: royalblue");
@@ -584,7 +616,7 @@ public class IPv6SubnettingTool extends Application {
             }
         });
         //
-        buttonFind.setOnAction(new EventHandler<ActionEvent>() {
+        buttonCalc.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent event) {
                 Calculate(input.getText());
@@ -646,6 +678,8 @@ public class IPv6SubnettingTool extends Application {
                 StartEnd.subnetslash = newValue.intValue();
                 c2.setText("/" + newValue.intValue());
 
+                MaskValue();
+                
                 UpdatePrintBin();
                 UpdateStatus();
                 UpdateCount();
@@ -701,6 +735,7 @@ public class IPv6SubnettingTool extends Application {
             @Override
             public void handle(KeyEvent key) {
                 if (key.getCode() == KeyCode.ESCAPE) {
+                    WriteInfoXML();
                     Platform.exit();
                 } else if (key.getCode() == KeyCode.ENTER) {
                     if (!prefixlist.getSelectionModel().isEmpty()
@@ -820,6 +855,7 @@ public class IPv6SubnettingTool extends Application {
                 buttonPrevSpace.setDisable(true);
                 buttonNextSpace.setDisable(true);
                 prefixlist.getItems().clear();
+                smask.clear();
 
             }
         });
@@ -1038,6 +1074,13 @@ public class IPv6SubnettingTool extends Application {
                 sendPrefixtoDB.fire();
             }
         });
+        MenuItem contextitemGetprefixFromDB = new MenuItem("Get prefix info from database...");
+        contextitemGetprefixFromDB.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent e) {
+                getPrefixInfoFromDB.fire();
+            }
+        });        
         MenuItem contextitemsubPrefixes = new MenuItem("subLevels of the prefix...");
         contextitemsubPrefixes.setOnAction(new EventHandler<ActionEvent>() {
             public void handle(ActionEvent e) {
@@ -1056,12 +1099,12 @@ public class IPv6SubnettingTool extends Application {
             public void handle(ActionEvent e) {
                 saveAs.fire();
             }
-        });
+        });                
         contextMenu.getItems().addAll(contextitemSelectall, contextitemCopy,
                 contextitemSaveas, new SeparatorMenuItem(), contextitemListRevDNS,
                 contextitemGotopfx, contextitemFindpfx, contextitemworkWithSelected,
-                new SeparatorMenuItem(), contextitemSendtodb, contextitemsubPrefixes,
-                contextitemstatsUsage);        
+                new SeparatorMenuItem(), contextitemSendtodb, contextitemGetprefixFromDB,
+                contextitemsubPrefixes, contextitemstatsUsage);        
         contextMenu.setOnShowing(new EventHandler<WindowEvent>() {
             @Override
             public void handle(WindowEvent e) {
@@ -1072,26 +1115,204 @@ public class IPv6SubnettingTool extends Application {
                     contextitemGotopfx.setDisable(true);
                     contextitemFindpfx.setDisable(true);
                     contextitemworkWithSelected.setDisable(true);
+                    contextitemSendtodb.setDisable(true);
+                    contextitemGetprefixFromDB.setDisable(true);
+                    contextitemsubPrefixes.setDisable(true);
+                    contextitemstatsUsage.setDisable(true);                    
                 } else {
                     contextitemSaveas.setDisable(false);
                     contextitemListRevDNS.setDisable(false);
                     contextitemGotopfx.setDisable(false);
                     contextitemFindpfx.setDisable(false);
                     contextitemworkWithSelected.setDisable(false);
-                }
-                if (MySQLconnection == null) {
+                    if (MySQLconnection != null) 
+                    {
+                        contextitemstatsUsage.setDisable(false);
+                        
+                        if (prefixlist.getSelectionModel().getSelectedItem() != null) {
+                            contextitemSendtodb.setDisable(false);
+                            contextitemGetprefixFromDB.setDisable(false);
+                            contextitemsubPrefixes.setDisable(false);
+                        }
+                        else {
+                            contextitemSendtodb.setDisable(true);
+                            contextitemGetprefixFromDB.setDisable(true);
+                            contextitemsubPrefixes.setDisable(true);                            
+                        }
+                    }
+                    else {
                     contextitemSendtodb.setDisable(true);
+                    contextitemGetprefixFromDB.setDisable(true);
                     contextitemsubPrefixes.setDisable(true);
-                    contextitemstatsUsage.setDisable(true);
-                } else {
-                    contextitemSendtodb.setDisable(false);
-                    contextitemsubPrefixes.setDisable(false);
-                    contextitemstatsUsage.setDisable(false);
+                    contextitemstatsUsage.setDisable(true);                        
+                    }
                 }
             }
         });
     } //Settings
 
+    public void ReadInfoXML() {
+        /* Read Info XML file. This file is used like Registry
+         * to help user not to enter the same informations repeatedly.
+         */
+
+        File xmlFile = new File(xmlFilename);
+        if (xmlFile.exists() && !xmlFile.isDirectory()) {
+            DocumentBuilderFactory documentBuilderFactory = DocumentBuilderFactory.newInstance();
+            DocumentBuilder documentBuilder = null;
+            try {
+                documentBuilder = documentBuilderFactory.newDocumentBuilder();
+            } catch (ParserConfigurationException ex) {
+                Logger.getLogger(DBConnectInfo.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            Document doc = null;
+            try {
+                doc = documentBuilder.parse(xmlFile);
+            } catch (SAXException ex) {
+                Logger.getLogger(DBConnectInfo.class.getName()).log(Level.SEVERE, null, ex);
+            } catch (IOException ex) {
+                Logger.getLogger(DBConnectInfo.class.getName()).log(Level.SEVERE, null, ex);
+            }
+            doc.getDocumentElement().normalize();
+            NodeList nodeList = doc.getElementsByTagName("DBServerInfo");
+
+            for (int i = 0; i < nodeList.getLength(); i++) {
+                Node root = nodeList.item(i);
+                if (root.getNodeType() == Node.ELEMENT_NODE) {
+                    Element child = (Element) root;
+                    try {
+                        dbserverInfo.ServerIP
+                                = InetAddress.getByName(child.getElementsByTagName("ServerIP").item(0).getTextContent().trim());
+                    } catch (UnknownHostException ex) {
+                        Logger.getLogger(IPv6SubnettingTool.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                    try {
+                        IPv6SubnettingTool.dbserverInfo.PortNum
+                                = Integer.parseInt(child.getElementsByTagName("PortNumber").item(0).getTextContent().trim());
+                    } catch (NumberFormatException ex) {
+                        Logger.getLogger(IPv6SubnettingTool.class.getName()).log(Level.SEVERE, null, ex);
+                    }
+                    dbserverInfo.DBname = child.getElementsByTagName("DatabaseName").item(0).getTextContent().trim();
+                    dbserverInfo.Tablename = child.getElementsByTagName("TableName").item(0).getTextContent().trim();
+                    dbserverInfo.Username = child.getElementsByTagName("UserName").item(0).getTextContent().trim();
+
+                    //tfIP.setText(child.getElementsByTagName("ServerIP").item(0).getTextContent());
+                    //tfPort.setText(child.getElementsByTagName("PortNumber").item(0).getTextContent());
+                    //tfDBname.setText(child.getElementsByTagName("DatabaseName").item(0).getTextContent());
+                    //tfTablename.setText(child.getElementsByTagName("TableName").item(0).getTextContent());
+                    //tfUsername.setText(child.getElementsByTagName("UserName").item(0).getTextContent());         
+                }
+            }
+            /* For future use:
+               NodeList ui_nodeList = doc.getElementsByTagName("UI_Info");
+             */
+        }
+    }
+    
+    public void WriteInfoXML() {
+        /* Write Info into the XML file. This file is used like Registry
+         * to help user not to enter the same informations repeatedly.
+         */
+        
+        DocumentBuilderFactory dbf = DocumentBuilderFactory.newInstance();
+        try {
+            dbf.setFeature(XMLConstants.FEATURE_SECURE_PROCESSING, true);
+        } catch (ParserConfigurationException ex) {
+            Logger.getLogger(DBConnectInfo.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        DocumentBuilder db = null;
+        try {
+            db = dbf.newDocumentBuilder();
+        } catch (ParserConfigurationException ex) {
+            Logger.getLogger(DBConnectInfo.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        Document document = db.newDocument();
+        
+        Element root = document.createElement("INFO");
+        document.appendChild(root);
+
+        /* UI_Info: For future use
+        Element ui_info = document.createElement("UI_Info");
+        root.appendChild(ui_info);
+        
+        Element ui_param1 = document.createElement("ui_param1");
+        ui_param1.appendChild(document.createTextNode("parameter1"));
+        ui_info.appendChild(ui_param1);
+        */
+        
+        Element dbServerinfo = document.createElement("DBServerInfo");
+        root.appendChild(dbServerinfo);
+        //
+        Element ServerIP = document.createElement("ServerIP");
+        if (dbserverInfo.ServerIP != null) {
+            ServerIP.appendChild(document.createTextNode(dbserverInfo.ServerIP.getHostAddress().trim()));
+            dbServerinfo.appendChild(ServerIP);
+        }
+        else {
+            ServerIP.appendChild(document.createTextNode(""));
+            dbServerinfo.appendChild(ServerIP);            
+        }
+        //
+        Element PortNumber = document.createElement("PortNumber");
+        if (String.valueOf(dbserverInfo.PortNum) != "") {
+            PortNumber.appendChild(document.createTextNode(String.valueOf(dbserverInfo.PortNum).trim()));
+            dbServerinfo.appendChild(PortNumber);
+        }
+        else {
+            PortNumber.appendChild(document.createTextNode(""));
+            dbServerinfo.appendChild(PortNumber);            
+        }
+        //
+        Element DatabaseName = document.createElement("DatabaseName");
+        if (dbserverInfo.DBname != " ") {
+            DatabaseName.appendChild(document.createTextNode(dbserverInfo.DBname.trim()));
+            dbServerinfo.appendChild(DatabaseName);
+        }
+        else {
+            DatabaseName.appendChild(document.createTextNode(""));
+            dbServerinfo.appendChild(DatabaseName);            
+        }
+        //
+        Element TableName = document.createElement("TableName");
+        if (dbserverInfo.Tablename != "") {
+            TableName.appendChild(document.createTextNode(dbserverInfo.Tablename.trim()));
+            dbServerinfo.appendChild(TableName);
+        }
+        else {
+            TableName.appendChild(document.createTextNode(""));
+            dbServerinfo.appendChild(TableName);            
+        }
+        //
+        Element UserName = document.createElement("UserName");
+        if (dbserverInfo.Username != "") {
+            UserName.appendChild(document.createTextNode(dbserverInfo.Username.trim()));
+            dbServerinfo.appendChild(UserName);
+        }
+        else {
+            UserName.appendChild(document.createTextNode(""));
+            dbServerinfo.appendChild(UserName);            
+        }
+        //
+        TransformerFactory transformerFactory = TransformerFactory.newInstance();
+        Transformer transformer = null;
+        try {
+            transformer = transformerFactory.newTransformer();
+        } catch (TransformerConfigurationException ex) {
+            Logger.getLogger(DBConnectInfo.class.getName()).log(Level.SEVERE, null, ex);
+        }
+        transformer.setOutputProperty(OutputKeys.ENCODING, "UTF-8");
+        transformer.setOutputProperty(OutputKeys.INDENT, "yes");
+        
+        DOMSource domSource = new DOMSource(document);
+        StreamResult streamResult = new StreamResult(new File(xmlFilename)); //(System.out);
+
+        try {
+            transformer.transform(domSource, streamResult);
+        } catch (TransformerException ex) {
+            Logger.getLogger(DBConnectInfo.class.getName()).log(Level.SEVERE, null, ex);
+        }
+    }
+    
     public void Calculate(String sin) {
         if (v6ST.IsAddressCorrect(sin)) {
             status.setText(v6ST.errmsg);
@@ -1142,8 +1363,14 @@ public class IPv6SubnettingTool extends Application {
             tfstartAddr.setText("");
             tfendAddr.setText("");
         }
+        MaskValue();
     }
 
+    public void MaskValue() {
+        BigInteger mask = v6ST.PrepareMask((short)sd2.getValue());
+        smask.setText(v6ST.CompressAddress(v6ST.Kolonlar(mask)));
+    }
+    
     public void DisplayPrevNextSpace() {
 
         prefixlist.getItems().clear();
@@ -1199,7 +1426,7 @@ public class IPv6SubnettingTool extends Application {
         sd1.setMax(128);
         sd2.setPrefWidth(770);
         sd2.setMax(128);
-        prefixlist.setMaxHeight(190);
+        prefixlist.setMaxHeight(170);
         prefixlist.setMaxWidth(770);
         lbaddrspno.setPrefWidth(340);
         hblistcount.setPrefWidth(444);
@@ -1215,7 +1442,7 @@ public class IPv6SubnettingTool extends Application {
         sd1.setMax(64);
         sd2.setPrefWidth(380);
         sd2.setMax(64);
-        prefixlist.setMaxHeight(190);
+        prefixlist.setMaxHeight(170);
         prefixlist.setMaxWidth(380);
         lbaddrspno.setPrefWidth(135);
         hblistcount.setPrefWidth(54);
@@ -1233,6 +1460,7 @@ public class IPv6SubnettingTool extends Application {
             @Override
             public void handle(ActionEvent t) {
                 DBClose();
+                WriteInfoXML();
                 Platform.exit();
             }
         });
@@ -1742,20 +1970,29 @@ public class IPv6SubnettingTool extends Application {
         MenuItem dbstatus = new MenuItem("Status");
         MenuItem openDBform = new MenuItem("Open DB Form...");
         menuDatabase.getItems().addAll(new SeparatorMenuItem(), dbcon, dbclose, dbstatus,
-                new SeparatorMenuItem(), openDBform, sendPrefixtoDB, subPrefixes, menuItemstatsUsage);
+                new SeparatorMenuItem(), openDBform, sendPrefixtoDB, getPrefixInfoFromDB,
+                subPrefixes, menuItemstatsUsage);
         menuDatabase.setOnShowing(new EventHandler<Event>() {
             @Override
             public void handle(Event event) {
                 if (MySQLconnection == null) {
                     openDBform.setDisable(true);
                     sendPrefixtoDB.setDisable(true);
+                    getPrefixInfoFromDB.setDisable(true);
                     subPrefixes.setDisable(true);
-                    menuItemstatsUsage.setDisable(true);
+                    menuItemstatsUsage.setDisable(true);                    
                 } else {
                     openDBform.setDisable(false);
-                    sendPrefixtoDB.setDisable(false);
-                    subPrefixes.setDisable(false);
                     menuItemstatsUsage.setDisable(false);
+                    if (prefixlist.getSelectionModel().getSelectedItem() != null) {
+                        sendPrefixtoDB.setDisable(false);
+                        getPrefixInfoFromDB.setDisable(false);
+                        subPrefixes.setDisable(false);
+                    } else {
+                        sendPrefixtoDB.setDisable(true);
+                        getPrefixInfoFromDB.setDisable(true);
+                        subPrefixes.setDisable(true);                        
+                    }
                 }
             }
         });
@@ -1868,6 +2105,15 @@ public class IPv6SubnettingTool extends Application {
                 }
             }
         });
+        getPrefixInfoFromDB.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent t) {
+                if (prefixlist.getSelectionModel().getSelectedItem() != null) {
+                    String selected = prefixlist.getSelectionModel().getSelectedItem().split(" ")[1].trim();
+                    GetPrefixInfoFromDB getpfxdbinfo = new GetPrefixInfoFromDB(selected, MySQLconnection, dbserverInfo);
+                }
+            }
+        });
         subPrefixes.setOnAction(new EventHandler<ActionEvent>() {
             @Override
             public void handle(ActionEvent t) {
@@ -1973,12 +2219,18 @@ public class IPv6SubnettingTool extends Application {
 
     public void ConnectToDBServer() {
         try {
-            Class.forName("com.mysql.jdbc.Driver");
+            //Class.forName("com.mysql.jdbc.Driver");
+            Class.forName("com.mysql.cj.jdbc.Driver");
             try {
-                Class.forName("com.mysql.jdbc.Driver");                
+                //Class.forName("com.mysql.jdbc.Driver");                
+                Class.forName("com.mysql.cj.jdbc.Driver");
                 MySQLconnection = DriverManager.getConnection("jdbc:mysql://"
                         + dbserverInfo.ServerIP.getHostAddress() + ":"
-                        + String.valueOf(dbserverInfo.PortNum) + "/",
+                        + String.valueOf(dbserverInfo.PortNum) + "/?"
+                        + "useUnicode=true" + "&"
+                        + "useJDBCCompliantTimezoneShift=true" + "&"
+                        + "useLegacyDatetimeCode=false" + "&"
+                        + "serverTimezone=UTC",
                         dbserverInfo.Username, dbserverInfo.Password.getText());
 
                 UpdateDbStatus();
@@ -1992,7 +2244,9 @@ public class IPv6SubnettingTool extends Application {
             }
             dbserverInfo.ConnectionString = "jdbc:mysql://"
                     + dbserverInfo.ServerIP.getHostAddress() + ":"
-                    + String.valueOf(dbserverInfo.PortNum) + "/" + dbserverInfo.DBname;
+                    + String.valueOf(dbserverInfo.PortNum) 
+                    + "/?useUnicode=true&useJDBCCompliantTimezoneShift=true&useLegacyDatetimeCode=false&serverTimezone=UTC"
+                    + dbserverInfo.DBname;
             //
             // Database exist?
             this.statement = MySQLconnection.createStatement();
@@ -2129,7 +2383,7 @@ public class IPv6SubnettingTool extends Application {
                 this.resultSet = this.statement.executeQuery(
                         "SHOW INDEX from " 
                         + "`" + dbserverInfo.DBname + "`."
-                        + "`" + dbserverInfo.Tablename + "`"
+                        + "`" + dbserverInfo.Tablename + "` "
                         + " WHERE Key_name = 'idx_index';");
                 if (!this.resultSet.next()) {
                     this.statement.executeUpdate(
@@ -2172,7 +2426,7 @@ public class IPv6SubnettingTool extends Application {
             return -1;
         }
     }
-
+    
     public GridPane addGrid() {
         grid.setHgap(5);
         grid.setVgap(5);
@@ -2187,7 +2441,7 @@ public class IPv6SubnettingTool extends Application {
         grid.add(hb0, 0, 1);
         //
         HBox hb1 = new HBox(5);
-        hb1.getChildren().addAll(input, buttonFind);
+        hb1.getChildren().addAll(input, buttonCalc);
         grid.add(hb1, 1, 1);
         //
         HBox hb02 = new HBox();
@@ -2256,10 +2510,19 @@ public class IPv6SubnettingTool extends Application {
         sldr2.getChildren().addAll(sd2, c2);
         grid.add(sldr2, 1, 7);
         //
+        HBox hblbsmask = new HBox();
+        hblbsmask.getChildren().add(lbsmask);
+        hblbsmask.setAlignment(Pos.CENTER_RIGHT);
+        grid.add(hblbsmask, 0, 8);
+        //
+        HBox hbsmask = new HBox();
+        hbsmask.getChildren().add(smask);
+        grid.add(hbsmask, 1, 8);
+        //
         HBox hblbendaddr = new HBox();
         hblbendaddr.getChildren().add(lbckendaddr);
         hblbendaddr.setAlignment(Pos.BOTTOM_RIGHT); //.CENTER_RIGHT);
-        grid.add(hblbendaddr, 0, 8);
+        grid.add(hblbendaddr, 0, 9);
         //
         hblistcount.getChildren().add(listcount);
         hblistcount.setAlignment(Pos.BOTTOM_RIGHT);
@@ -2267,14 +2530,14 @@ public class IPv6SubnettingTool extends Application {
         HBox btns = new HBox(3);
         btns.getChildren().addAll(buttonFirstPage, buttonBack, buttonFwd,
                 buttonLast, canvas, hblistcount);
-        grid.add(btns, 1, 8);
+        grid.add(btns, 1, 9);
         //
-        grid.add(prefixlist, 1, 9);
+        grid.add(prefixlist, 1, 10);
         //
         HBox hbyg = new HBox();
         hbyg.getChildren().add(lbyg);
         hbyg.setAlignment(Pos.BOTTOM_RIGHT);
-        grid.add(hbyg, 1, 10);
+        grid.add(hbyg, 1, 11);
         //
         return grid;
     }
@@ -2330,6 +2593,7 @@ public class IPv6SubnettingTool extends Application {
             public void handle(KeyEvent key) {
                 if (key.getCode() == KeyCode.ESCAPE) {
                     DBClose();
+                    WriteInfoXML();
                     Platform.exit();
                 }
             }
@@ -2338,6 +2602,7 @@ public class IPv6SubnettingTool extends Application {
             @Override
             public void handle(WindowEvent e) {
                 DBClose();
+                WriteInfoXML();
                 Platform.exit();
             }
         });

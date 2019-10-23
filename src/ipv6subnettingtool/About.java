@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019, Yucel Guven
+ * Copyright (c) 2010-2020, Yucel Guven
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -43,7 +43,7 @@ import javafx.stage.Stage;
  * @author Yucel Guven
  */
 public final class About {
-    public static final String version = "3.2.1";
+    public static final String version = "3.3";
     /**
      * About 
      */
@@ -58,7 +58,7 @@ public final class About {
         Label label0 = new Label("       ");
         Label label1 = new Label("IPv6 Subnet Calculator / IPv6 Ağ Hesap Makinesi");
         Label label2 = new Label("Version " + version);
-        Label label3 = new Label("Copyright (c) 2010-2019 Yücel Güven");
+        Label label3 = new Label("Copyright (c) 2010-2020 Yucel Guven");
         Label label4 = new Label("yucelguven@hotmail.com");
         Label label5 = new Label("");
         Label label6 = new Label("IPv4> FF.FF.FF.FF");

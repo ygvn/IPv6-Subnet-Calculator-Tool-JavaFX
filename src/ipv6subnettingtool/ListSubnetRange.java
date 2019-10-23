@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019, Yucel Guven
+ * Copyright (c) 2010-2020, Yucel Guven
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -127,6 +127,7 @@ public class ListSubnetRange {
     SaveAsTxt saveas = null;
     ListDnsReverses dnsr = null;
     DatabaseUI dbUIsend = null;
+    GetPrefixInfoFromDB getprefixinfofromdb = null;
     //
 //</editor-fold>
     
@@ -602,6 +603,17 @@ public class ListSubnetRange {
             }
         });
         //
+        MenuItem contextGetprefixFromDB = new MenuItem("Get prefix info from database...");
+        contextGetprefixFromDB.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent e) {
+                if (prefixlist.getSelectionModel().getSelectedItem() != null) {
+                    String prefix = prefixlist.getSelectionModel().getSelectedItem().split(" ")[1];
+                    getprefixinfofromdb = new GetPrefixInfoFromDB(prefix, MySQLconnection, dbserverInfo);
+                }
+            }
+        });
+        //
         MenuItem contextSaveas = new MenuItem("Save As Text...");
         contextSaveas.setOnAction(new EventHandler<ActionEvent>() {
             @Override
@@ -621,9 +633,10 @@ public class ListSubnetRange {
             }
         });
         //
-        contextMenu.getItems().addAll(contextitemSelectall, 
-                contextitemCopy, contextListDNSRevs, contextSendtoDb, new SeparatorMenuItem(), contextSaveas);
-        
+        contextMenu.getItems().addAll(contextitemSelectall, contextitemCopy,
+                contextListDNSRevs, new SeparatorMenuItem(), contextSendtoDb,
+                contextGetprefixFromDB, new SeparatorMenuItem(), contextSaveas);
+        //
     }//END
 
     public void UpdateCount() {

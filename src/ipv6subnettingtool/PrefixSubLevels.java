@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019, Yucel Guven
+ * Copyright (c) 2010-2020, Yucel Guven
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -33,14 +33,20 @@ import java.util.List;
 import javafx.beans.property.BooleanProperty;
 import javafx.beans.value.ChangeListener;
 import javafx.beans.value.ObservableValue;
+import javafx.event.ActionEvent;
 import javafx.event.EventHandler;
 import javafx.geometry.Insets;
 import javafx.geometry.Pos;
 import javafx.scene.Scene;
 import javafx.scene.control.Alert;
+import javafx.scene.control.ContextMenu;
 import javafx.scene.control.Label;
+import javafx.scene.control.MenuItem;
+import javafx.scene.control.SeparatorMenuItem;
 import javafx.scene.control.TreeItem;
 import javafx.scene.control.TreeView;
+import javafx.scene.input.Clipboard;
+import javafx.scene.input.ClipboardContent;
 import javafx.scene.input.KeyCode;
 import javafx.scene.input.KeyEvent;
 import javafx.scene.layout.AnchorPane;
@@ -86,7 +92,11 @@ public final class PrefixSubLevels {
     TreeView<String> treeView = null;
     TreeItem<String> rootItem = null;
     TreeItem<String> dummy = null;
-
+    //
+    final ContextMenu contextMenu = new ContextMenu();
+    final Clipboard clipboard = Clipboard.getSystemClipboard();
+    final ClipboardContent content = new ClipboardContent();
+    //
 //</editor-fold>
     
     public PrefixSubLevels(String inprefix, short inpflen, String inparentprefix, Boolean chks,
@@ -141,6 +151,8 @@ public final class PrefixSubLevels {
         lb3.setStyle("-fx-text-fill: royalblue; -fx-font-weight: bold;");
         treeView.setPrefWidth(410);
         treeView.setPrefHeight(350);
+        treeView.setContextMenu(contextMenu);
+        //
         treeView.addEventHandler(KeyEvent.KEY_PRESSED, new EventHandler<KeyEvent>() {
             @Override
             public void handle(KeyEvent key) {
@@ -150,7 +162,36 @@ public final class PrefixSubLevels {
                 }
             }
         });
+        //
+        contextMenu.setOnShowing(new EventHandler<WindowEvent>() {
+            public void handle(WindowEvent e) {
 
+            }
+        });
+        MenuItem contextitemCopy = new MenuItem("Copy");
+        contextitemCopy.setOnAction(new EventHandler<ActionEvent>() {
+            public void handle(ActionEvent e) {
+                if (treeView.getSelectionModel().getSelectedItem() != null) {
+                    String tmp = treeView.getSelectionModel().getSelectedItem().getValue();
+                    content.putString(tmp);
+                    clipboard.setContent(content);
+                }
+            }
+        });
+        MenuItem contextGetprefixFromDB = new MenuItem("Get prefix info from database...");
+        contextGetprefixFromDB.setOnAction(new EventHandler<ActionEvent>() {
+            @Override
+            public void handle(ActionEvent e) {
+                if (treeView.getSelectionModel().getSelectedItem() != null) {
+                    String prefix = treeView.getSelectionModel().getSelectedItem().getValue();
+                    GetPrefixInfoFromDB getprefixinfofromdb = 
+                            new GetPrefixInfoFromDB(prefix, MySQLconnection, dbserverInfo);
+                }
+            }
+        });        
+        //
+        contextMenu.getItems().addAll(contextitemCopy, new SeparatorMenuItem(),
+                contextGetprefixFromDB);
     }
 
     @SuppressWarnings("unchecked")

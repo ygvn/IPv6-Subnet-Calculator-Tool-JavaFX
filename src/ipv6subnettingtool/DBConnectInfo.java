@@ -1,5 +1,5 @@
 /*
- * Copyright (c) 2010-2019, Yucel Guven
+ * Copyright (c) 2010-2020, Yucel Guven
  * All rights reserved.
  *
  * Redistribution and use in source and binary forms, with or without
@@ -83,17 +83,28 @@ public final class DBConnectInfo {
     PasswordField tfPasswd = new PasswordField();
     Button buttonConnect = new Button("Connect");    
     Button buttonCancel = new Button("Cancel");
-    
-    //
-    
+        
     public DBConnectInfo() {
+        
         SettingsAndEvents();
+        //
+
+        if (IPv6SubnettingTool.dbserverInfo.ServerIP != null)
+            tfIP.setText(IPv6SubnettingTool.dbserverInfo.ServerIP.getHostAddress());
+        if (String.valueOf(IPv6SubnettingTool.dbserverInfo.PortNum) != null)
+            tfPort.setText(String.valueOf(IPv6SubnettingTool.dbserverInfo.PortNum).trim());
+        if (IPv6SubnettingTool.dbserverInfo.DBname != "")
+            tfDBname.setText(IPv6SubnettingTool.dbserverInfo.DBname.trim());
+        if (IPv6SubnettingTool.dbserverInfo.Tablename != "")
+            tfTablename.setText(IPv6SubnettingTool.dbserverInfo.Tablename.trim());
+        if (IPv6SubnettingTool.dbserverInfo.Username != "")
+            tfUsername.setText(IPv6SubnettingTool.dbserverInfo.Username.trim());
         //
         stage.addEventHandler(KeyEvent.KEY_PRESSED, new EventHandler<KeyEvent>() {
             @Override
             public void handle(KeyEvent key) {
                 if (key.getCode() == KeyCode.ESCAPE) {
-                    IPv6SubnettingTool.dbserverInfo.Initialize();
+                    //IPv6SubnettingTool.dbserverInfo.Initialize();
                     key.consume();
                     stage.close();
                 }
@@ -102,7 +113,7 @@ public final class DBConnectInfo {
         stage.addEventHandler(WindowEvent.WINDOW_CLOSE_REQUEST, new EventHandler<WindowEvent>() {
             @Override
             public void handle(WindowEvent t) {
-                    IPv6SubnettingTool.dbserverInfo.Initialize();
+                    //IPv6SubnettingTool.dbserverInfo.Initialize();
                     t.consume();
                     stage.close();
             }
@@ -234,7 +245,7 @@ public final class DBConnectInfo {
             }
         });
     }
-
+    
     public GridPane addGrid() {
         grid.setHgap(5);
         grid.setVgap(5);
